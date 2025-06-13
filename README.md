@@ -12,14 +12,14 @@ This repository is a basic guide on how to build AI Agents using pyhton and Open
 -Download Cursor, VS Code or Windsurf to your computer (Google it)
 -Open your IDE (Cursor, Windsurf, VSCode) and then click on Open Folder (create a folder for this project)
 -Go to the top left and chose Terminal -> New Terminal
-- In the Terminal: copy and paste this:
+- In the Terminal: copy and paste this + enter:
 ```bash
 git clone https://github.com/diegocp01/openai_agents.git
 ```
 
 Make sure your folder name on the left is the same as the terminal. (if not, take a screenshoot and ask chatgpt. Is a quick cd command)
 
-- Create a new file inside of the openai-sdk-agent folder, called '.env'
+-Create a new file inside of the openai-sdk-agent folder, called '.env'
 -Inside of the .env file copy this:
 
 ```bash
@@ -31,27 +31,29 @@ OPENAI_API_KEY=sk-12232432
 MODEL_CHOICE=gpt-4.1-nano
 ```
 
-1. In the Terminal: Install the required dependencies:
-
+-In the Terminal: Install the required dependencies:
+Create a virtual enviroment like this ->
 ```bash
 python -m venv .venv
 ```
+If your IDE asks you to create a python ENV click YES
+
+-Then in the terminal paste this (This activates the enviroment): 
 ```bash
 source .venv/bin/activate
 ```
+
+-Now you will install the openai agents sdk and other frameworks needed
+-(The frameworks are listed in the requirements file)
 ```bash
 pip install -r requirements.txt
 ```
+
+Then paste this in the terminal (with your openai key from .env file)
 ```bash
-export OPENAI_API_KEY=sk-...
+export OPENAI_API_KEY=sk-122
 ```
 
-2. Create a `.env` file with your OpenAI API key:
-
-```
-OPENAI_API_KEY=your_api_key_here
-MODEL_CHOICE=gpt-4o-mini  # or another model of your choice
-```
 
 ## Files
 
@@ -60,11 +62,46 @@ MODEL_CHOICE=gpt-4o-mini  # or another model of your choice
 - `v3_tool_calls.py` - Agent with access to tools
 - `v4_handoffs.py` - Orchestrator Agents with Specialized agents
 
+# Running the Agents
+## Basic Agent (v1)
 
-## Streamlit
+Run the basic agent example:
 
 ```bash
-streamlit run v1_basic_agent_streamlit.py
+python v1_basic_agent.py
+```
+
+## Structured Output Agent (v2)
+
+Run the Agent with organized outputs:
+
+```bash
+python v2_structured_output.py
+```
+
+## Tool Calls Agent (v3)
+
+Run the tool calls travel agent example:
+
+```bash
+python v3_tool_calls.py
+```
+
+Now we will give our agent some TOOLS! (This is when it gets fun!)
+Recipe Agent
+
+## Handoffs Agent (v4)
+
+Run the Orchestrator Agents with Specialized agents
+
+```bash
+python v4_handoffs.py
+```
+
+## Run the interactive user interface app
+
+```bash
+streamlit run app.py
 ```
 ## Running the Examples
 
@@ -78,33 +115,11 @@ python v1_basic_agent.py
 
 This will execute a simple agent that generates a haiku about recursion.
 
-### Structured Output Agent (v2)
 
-Run the structured output travel agent example:
-
-```bash
-python v2_structured_output.py
-```
 
 This demonstrates using Pydantic models to create structured travel plans with destinations, activities, and budget information.
 
-### Tool Calls Agent (v3)
 
-Run the tool calls travel agent example:
-
-```bash
-python v3_tool_calls.py
-```
-
-This version adds a weather forecasting tool to provide weather information for travel destinations.
-
-### Handoffs Agent (v4)
-
-Run the handoffs travel agent example:
-
-```bash
-python v4_handoffs.py
-```
 
 This version introduces specialized sub-agents for flight and hotel recommendations, demonstrating agent handoffs.
 

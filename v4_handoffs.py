@@ -1,3 +1,9 @@
+
+# ==============================================================================
+# Now we have a main agent and 2 specialized agents
+# Entertainment Agents
+# ==============================================================================
+
 import asyncio
 import json
 from typing import List, Optional
@@ -13,246 +19,190 @@ model = os.getenv('MODEL_CHOICE', 'gpt-4.1-nano')
 
 # --- Models for structured outputs ---
 
-class FlightRecommendation(BaseModel):
-    airline: str
-    departure_time: str
-    arrival_time: str
-    price: float
-    direct_flight: bool
-    recommendation_reason: str
+class BookRecommendation(BaseModel):
+    title: str
+    author: str
+    genre: str
+    reading_time_hours: int
+    reason: str = Field(description="Why this book is recommended")
 
-class HotelRecommendation(BaseModel):
-    name: str
-    location: str
-    price_per_night: float
-    amenities: List[str]
-    recommendation_reason: str
+class MovieRecommendation(BaseModel):
+    title: str
+    director: str
+    genre: str
+    duration_minutes: int
+    reason: str = Field(description="Why this movie is recommended")
 
-class TravelPlan(BaseModel):
-    destination: str
-    duration_days: int
-    budget: float
-    activities: List[str] = Field(description="List of recommended activities")
-    notes: str = Field(description="Additional notes or recommendations")
+class EntertainmentPlan(BaseModel):
+    activity_type: str
+    recommendation: str
+    time_needed: str
+    why_chosen: str
 
 # --- Tools ---
 
 @function_tool
-def get_weather_forecast(city: str, date: str) -> str:
-    """Get the weather forecast for a city on a specific date."""
-    # In a real implementation, this would call a weather API
-    weather_data = {
-        "New York": {"sunny": 0.3, "rainy": 0.4, "cloudy": 0.3},
-        "Los Angeles": {"sunny": 0.8, "rainy": 0.1, "cloudy": 0.1},
-        "Chicago": {"sunny": 0.4, "rainy": 0.3, "cloudy": 0.3},
-        "Miami": {"sunny": 0.7, "rainy": 0.2, "cloudy": 0.1},
-        "London": {"sunny": 0.2, "rainy": 0.5, "cloudy": 0.3},
-        "Paris": {"sunny": 0.4, "rainy": 0.3, "cloudy": 0.3},
-        "Tokyo": {"sunny": 0.5, "rainy": 0.3, "cloudy": 0.2},
+def get_book_info(genre: str) -> str:
+    """Get information about popular books in a specific genre."""
+    book_database = {
+        "mystery": [
+            {"title": "The Girl with the Dragon Tattoo", "author": "Stieg Larsson", "hours": 15},
+            {"title": "Gone Girl", "author": "Gillian Flynn", "hours": 12}
+        ],
+        "romance": [
+            {"title": "Pride and Prejudice", "author": "Jane Austen", "hours": 10},
+            {"title": "The Notebook", "author": "Nicholas Sparks", "hours": 8}
+        ],
+        "fantasy": [
+            {"title": "Harry Potter and the Sorcerer's Stone", "author": "J.K. Rowling", "hours": 9},
+            {"title": "The Hobbit", "author": "J.R.R. Tolkien", "hours": 11}
+        ]
     }
     
-    if city in weather_data:
-        conditions = weather_data[city]
-        # Simple simulation based on probabilities
-        highest_prob = max(conditions, key=conditions.get)
-        temp_range = {
-            "New York": "15-25°C",
-            "Los Angeles": "20-30°C",
-            "Chicago": "10-20°C",
-            "Miami": "25-35°C",
-            "London": "10-18°C",
-            "Paris": "12-22°C",
-            "Tokyo": "15-25°C",
-        }
-        return f"The weather in {city} on {date} is forecasted to be {highest_prob} with temperatures around {temp_range.get(city, '15-25°C')}."
+    if genre.lower() in book_database:
+        books = book_database[genre.lower()]
+        return json.dumps(books)
     else:
-        return f"Weather forecast for {city} is not available."
+        return "Genre not found in our database."
 
 @function_tool
-def search_flights(origin: str, destination: str, date: str) -> str:
-    """Search for flights between two cities on a specific date."""
-    # In a real implementation, this would call a flight search API
-    flight_options = [
-        {
-            "airline": "SkyWays",
-            "departure_time": "08:00",
-            "arrival_time": "10:30",
-            "price": 350.00,
-            "direct": True
-        },
-        {
-            "airline": "OceanAir",
-            "departure_time": "12:45",
-            "arrival_time": "15:15",
-            "price": 275.50,
-            "direct": True
-        },
-        {
-            "airline": "MountainJet",
-            "departure_time": "16:30",
-            "arrival_time": "21:45",
-            "price": 225.75,
-            "direct": False
-        }
-    ]
+def get_movie_info(genre: str) -> str:
+    """Get information about popular movies in a specific genre."""
+    movie_database = {
+        "comedy": [
+            {"title": "The Grand Budapest Hotel", "director": "Wes Anderson", "minutes": 99},
+            {"title": "Superbad", "director": "Greg Mottola", "minutes": 113}
+        ],
+        "action": [
+            {"title": "Mad Max: Fury Road", "director": "George Miller", "minutes": 120},
+            {"title": "John Wick", "director": "Chad Stahelski", "minutes": 101}
+        ],
+        "drama": [
+            {"title": "The Shawshank Redemption", "director": "Frank Darabont", "minutes": 142},
+            {"title": "Forrest Gump", "director": "Robert Zemeckis", "minutes": 142}
+        ]
+    }
     
-    return json.dumps(flight_options)
-
-@function_tool
-def search_hotels(city: str, check_in: str, check_out: str, max_price: Optional[float] = None) -> str:
-    """Search for hotels in a city for specific dates within a price range."""
-    # In a real implementation, this would call a hotel search API
-    hotel_options = [
-        {
-            "name": "City Center Hotel",
-            "location": "Downtown",
-            "price_per_night": 199.99,
-            "amenities": ["WiFi", "Pool", "Gym", "Restaurant"]
-        },
-        {
-            "name": "Riverside Inn",
-            "location": "Riverside District",
-            "price_per_night": 149.50,
-            "amenities": ["WiFi", "Free Breakfast", "Parking"]
-        },
-        {
-            "name": "Luxury Palace",
-            "location": "Historic District",
-            "price_per_night": 349.99,
-            "amenities": ["WiFi", "Pool", "Spa", "Fine Dining", "Concierge"]
-        }
-    ]
-    
-    # Filter by max price if provided
-    if max_price is not None:
-        filtered_hotels = [hotel for hotel in hotel_options if hotel["price_per_night"] <= max_price]
+    if genre.lower() in movie_database:
+        movies = movie_database[genre.lower()]
+        return json.dumps(movies)
     else:
-        filtered_hotels = hotel_options
-        
-    return json.dumps(filtered_hotels)
+        return "Genre not found in our database."
 
 # --- Specialized Agents ---
 
-flight_agent = Agent(
-    name="Flight Specialist",
-    handoff_description="Specialist agent for finding and recommending flights",
+book_agent = Agent(
+    name="Book Specialist",
+    handoff_description="Expert who recommends books based on your preferences",
     instructions="""
-    You are a flight specialist who helps users find the best flights for their trips.
+    You are a friendly book specialist who loves helping people find their next great read!
     
-    Use the search_flights tool to find flight options, and then provide personalized recommendations
-    based on the user's preferences (price, time, direct vs. connecting).
+    Use the get_book_info tool to find books in the genre the user wants.
+    Pick the best option and explain why it's perfect for them.
     
-    Always explain the reasoning behind your recommendations.
-    
-    Format your response in a clear, organized way with flight details and prices.
+    Be enthusiastic about reading and make the person excited to start their book!
     """,
     model=model,
-    tools=[search_flights],
-    output_type=FlightRecommendation
+    tools=[get_book_info],
+    output_type=BookRecommendation
 )
 
-hotel_agent = Agent(
-    name="Hotel Specialist",
-    handoff_description="Specialist agent for finding and recommending hotels and accommodations",
+movie_agent = Agent(
+    name="Movie Specialist", 
+    handoff_description="Expert who recommends movies based on your preferences",
     instructions="""
-    You are a hotel specialist who helps users find the best accommodations for their trips.
+    You are a movie buff who loves helping people find the perfect film to watch!
     
-    Use the search_hotels tool to find hotel options, and then provide personalized recommendations
-    based on the user's preferences (location, price, amenities).
+    Use the get_movie_info tool to find movies in the genre the user wants.
+    Pick the best option and explain why they'll love it.
     
-    Always explain the reasoning behind your recommendations.
-    
-    Format your response in a clear, organized way with hotel details, amenities, and prices.
+    Be exciting about movies and make them want to grab popcorn and start watching!
     """,
     model=model,
-    tools=[search_hotels],
-    output_type=HotelRecommendation
+    tools=[get_movie_info],
+    output_type=MovieRecommendation
 )
 
-# --- Main Travel Agent ---
+# --- Main Entertainment Agent ---
 
-travel_agent = Agent(
-    name="Travel Planner",
+entertainment_agent = Agent(
+    name="Entertainment Helper",
     instructions="""
-    You are a comprehensive travel planning assistant that helps users plan their perfect trip.
+    You are a friendly entertainment assistant who helps people decide what to do in their free time!
     
-    You can:
-    1. Provide weather information for destinations
-    2. Create personalized travel itineraries
-    3. Hand off to specialists for flights and hotels when needed
+    You can help with:
+    1. General entertainment advice
+    2. Hand off to book specialist for book recommendations
+    3. Hand off to movie specialist for movie recommendations
     
-    Always be helpful, informative, and enthusiastic about travel. Provide specific recommendations
-    based on the user's interests and preferences.
+    Be enthusiastic and helpful! When someone asks specifically about books or movies, 
+    hand them off to the right specialist.
     
-    When creating travel plans, consider:
-    - The weather at the destination
-    - Local attractions and activities
-    - Budget constraints
-    - Travel duration
-    
-    If the user asks specifically about flights or hotels, hand off to the appropriate specialist agent.
+    For general questions, give friendly advice about entertainment options.
     """,
     model=model,
-    tools=[get_weather_forecast],
-    handoffs=[flight_agent, hotel_agent],
-    output_type=TravelPlan
+    tools=[],
+    handoffs=[book_agent, movie_agent],
+    output_type=EntertainmentPlan
 )
+
 
 # --- Main Function ---
 
 async def main():
-    # Example queries to test different aspects of the system
+    # Example queries to test the system
     queries = [
-        "I need a flight from New York to Chicago tomorrow",
-        "Find me a hotel in Paris with a pool for under $300 per night"
+        "I want to read a good mystery book",
+        "Recommend me a funny movie to watch tonight"
     ]
     
     for query in queries:
         print("\n" + "="*50)
         print(f"QUERY: {query}")
         
-        result = await Runner.run(travel_agent, query)
+        result = await Runner.run(entertainment_agent, query)
+        
+        # Print handoff information if available
+        if hasattr(result, 'messages') and result.messages:
+            for message in result.messages:
+                if hasattr(message, 'role') and message.role == 'assistant':
+                    if 'handoff' in str(message).lower() or any(agent_name in str(message) for agent_name in ['Book Specialist', 'Movie Specialist']):
+                        print(f"\n🔄 HANDED OFF TO: {message.sender if hasattr(message, 'sender') else 'Specialist Agent'}")
+        
+        # Check if we can detect handoff from the result structure
+        if hasattr(result.final_output, "title") and hasattr(result.final_output, "author"):
+            print("\n🔄 HANDED OFF TO: Book Specialist")
+        elif hasattr(result.final_output, "title") and hasattr(result.final_output, "director"):
+            print("\n🔄 HANDED OFF TO: Movie Specialist")
         
         print("\nFINAL RESPONSE:")
         
-        # Format the output based on the type of response
-        if hasattr(result.final_output, "airline"):  # Flight recommendation
-            flight = result.final_output
-            print("\n✈️ FLIGHT RECOMMENDATION ✈️")
-            print(f"Airline: {flight.airline}")
-            print(f"Departure: {flight.departure_time}")
-            print(f"Arrival: {flight.arrival_time}")
-            print(f"Price: ${flight.price}")
-            print(f"Direct Flight: {'Yes' if flight.direct_flight else 'No'}")
-            print(f"\nWhy this flight: {flight.recommendation_reason}")
+        # Format output based on response type
+        if hasattr(result.final_output, "title") and hasattr(result.final_output, "author"):  # Book
+            book = result.final_output
+            print("\n📚 BOOK RECOMMENDATION 📚")
+            print(f"Title: {book.title}")
+            print(f"Author: {book.author}")
+            print(f"Genre: {book.genre}")
+            print(f"Reading Time: {book.reading_time_hours} hours")
+            print(f"\n💡 Why this book: {book.reason}")
             
-        elif hasattr(result.final_output, "name") and hasattr(result.final_output, "amenities"):  # Hotel recommendation
-            hotel = result.final_output
-            print("\n🏨 HOTEL RECOMMENDATION 🏨")
-            print(f"Name: {hotel.name}")
-            print(f"Location: {hotel.location}")
-            print(f"Price per night: ${hotel.price_per_night}")
+        elif hasattr(result.final_output, "title") and hasattr(result.final_output, "director"):  # Movie
+            movie = result.final_output
+            print("\n🎬 MOVIE RECOMMENDATION 🎬")
+            print(f"Title: {movie.title}")
+            print(f"Director: {movie.director}")
+            print(f"Genre: {movie.genre}")
+            print(f"Duration: {movie.duration_minutes} minutes")
+            print(f"\n💡 Why this movie: {movie.reason}")
             
-            print("\nAmenities:")
-            for i, amenity in enumerate(hotel.amenities, 1):
-                print(f"  {i}. {amenity}")
-                
-            print(f"\nWhy this hotel: {hotel.recommendation_reason}")
-## If final_output has a .destination attribute, it must be a TravelPlan          
-        elif hasattr(result.final_output, "destination"):  # Travel plan
-            travel_plan = result.final_output
-            print(f"\n🌍 TRAVEL PLAN FOR {travel_plan.destination.upper()} 🌍")
-            print(f"Duration: {travel_plan.duration_days} days")
-            print(f"Budget: ${travel_plan.budget}")
-            
-            print("\n🎯 RECOMMENDED ACTIVITIES:")
-            for i, activity in enumerate(travel_plan.activities, 1):
-                print(f"  {i}. {activity}")
-            
-            print(f"\n📝 NOTES: {travel_plan.notes}")
-        
-        else:  # Generic response
-            print(result.final_output)
+        else:  # General entertainment plan
+            plan = result.final_output
+            print("\n🎯 ENTERTAINMENT SUGGESTION 🎯")
+            print(f"Activity: {plan.activity_type}")
+            print(f"Recommendation: {plan.recommendation}")
+            print(f"Time Needed: {plan.time_needed}")
+            print(f"\n💡 Why this choice: {plan.why_chosen}")
 
 if __name__ == "__main__":
     asyncio.run(main())
