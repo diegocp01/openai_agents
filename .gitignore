@@ -1,0 +1,19 @@
+# Secrets
+password.txt
+**/.env
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+env/
+api___s.txt
+venv/
+
+# Editor and system files
+.vscode/
+.DS_Store
+
+*.png
