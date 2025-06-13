@@ -1,6 +1,9 @@
 # Intro
 
 This repository is a basic guide on how to build AI Agents using pyhton and OpenAI Agents SDK
+
+
+
 *Optional:* Talk to an AI expert about this repository: https://huggingface.co/spaces/diegocp01/GPT-4.1
 
 # Requirements
